@@ -16,6 +16,16 @@ RUN apk add --no-cache \
     php84-pdo_pgsql \
     php84-pcntl \
     php84-bcmath \
+    php84-posix \
+    php84-dom \
+    php84-tokenizer \
+    php84-xml \
+    php84-simplexml \
+    php84-xmlwriter \
+    php84-xmlreader \
+    php84-fileinfo \
+    php84-phar \
+    php84-iconv \
     php84-gd \
     php84-zip \
     php84-intl \
@@ -25,14 +35,7 @@ RUN apk add --no-cache \
     php84-pecl-swoole \
     php84-pecl-rdkafka \
     php84-pecl-mongodb \
-    php84-pecl-grpc \
-    php84-dom \
-    php84-tokenizer \
-    php84-xml \
-    php84-simplexml \
-    php84-xmlwriter \
-    php84-xmlreader \
-    php84-fileinfo
+    php84-pecl-grpc
 
 RUN ln -sf /usr/bin/php84 /usr/local/bin/php
 

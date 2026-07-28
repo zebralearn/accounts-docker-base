@@ -9,12 +9,14 @@ on:
 permissions:
     contents: read
     packages: write
+    id-token: write
 
 jobs:
     docker:
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
+            max-parallel: 2
             matrix:
                 include:
                     - platform: linux/amd64
@@ -26,6 +28,19 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
 
+            - name: Configure AWS credentials via OIDC
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                  role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+                  aws-region: ap-south-1
+
+            - name: Log in to Amazon ECR
+              id: login-ecr
+              uses: aws-actions/amazon-ecr-login@v2
+
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
+
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
@@ -36,11 +51,21 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Extract Docker metadata
-              id: meta
+            - name: Extract GHCR Docker metadata
+              id: meta-ghcr
               uses: docker/metadata-action@v5
               with:
                   images: ghcr.io/zebralearn/accounts-docker-base
+                  tags: |
+                      type=raw,value=latest-${{ matrix.platform_suffix }},enable={{is_default_branch}}
+                      type=ref,event=tag,suffix=-${{ matrix.platform_suffix }}
+                      type=sha,suffix=-${{ matrix.platform_suffix }}
+
+            - name: Extract ECR Docker metadata
+              id: meta-ecr
+              uses: docker/metadata-action@v5
+              with:
+                  images: ${{ steps.login-ecr.outputs.registry }}/${{ vars.AWS_ECR_REPOSITORY }}
                   tags: |
                       type=raw,value=latest-${{ matrix.platform_suffix }},enable={{is_default_branch}}
                       type=ref,event=tag,suffix=-${{ matrix.platform_suffix }}
@@ -53,7 +78,22 @@ jobs:
                   file: ./Dockerfile
                   platforms: ${{ matrix.platform }}
                   push: true
-                  tags: ${{ steps.meta.outputs.tags }}
-                  labels: ${{ steps.meta.outputs.labels }}
+                  tags: |
+                      ${{ steps.meta-ghcr.outputs.tags }}
+                      ${{ steps.meta-ecr.outputs.tags }}
+                  labels: ${{ steps.meta-ghcr.outputs.labels }}
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
+
+    release:
+        runs-on: ubuntu-latest
+        needs: docker
+        if: startsWith(github.ref, 'refs/tags/')
+        permissions:
+            contents: write
+        steps:
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ github.ref_name }}
+                  generate_release_notes: true

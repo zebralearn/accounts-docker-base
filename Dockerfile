@@ -1,6 +1,6 @@
-FROM php:8.2-cli-alpine AS runtime
+FROM php:8.4-cli-alpine AS runtime
 
-LABEL maintainer="Zebralearn DevOps <devops@zebralearn.com>"
+LABEL maintainer="Zebralearn DevOps <developer@zebralearn.com>"
 
 # Install core runtime utilities and tini
 RUN apk add --no-cache \

@@ -1,8 +1,8 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: ghcr.io/zebralearn/accounts-docker-base:local
-    container_name: accounts-docker-base
-    command: ["php", "-v"]
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: ghcr.io/zebralearn/accounts-docker-base:latest
+        container_name: accounts-docker-base
+        command: ["php", "-v"]

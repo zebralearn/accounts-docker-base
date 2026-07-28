@@ -14,15 +14,6 @@ permissions:
 jobs:
     docker:
         runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            max-parallel: 2
-            matrix:
-                include:
-                    - platform: linux/amd64
-                      platform_suffix: amd64
-                    - platform: linux/arm64
-                      platform_suffix: arm64
 
         steps:
             - name: Checkout repository
@@ -57,9 +48,9 @@ jobs:
               with:
                   images: ghcr.io/zebralearn/accounts-docker-base
                   tags: |
-                      type=raw,value=latest-${{ matrix.platform_suffix }},enable={{is_default_branch}}
-                      type=ref,event=tag,suffix=-${{ matrix.platform_suffix }}
-                      type=sha,suffix=-${{ matrix.platform_suffix }}
+                      type=raw,value=latest,enable={{is_default_branch}}
+                      type=ref,event=tag
+                      type=sha
 
             - name: Extract ECR Docker metadata
               id: meta-ecr
@@ -67,16 +58,16 @@ jobs:
               with:
                   images: ${{ steps.login-ecr.outputs.registry }}/${{ vars.AWS_ECR_REPOSITORY }}
                   tags: |
-                      type=raw,value=latest-${{ matrix.platform_suffix }},enable={{is_default_branch}}
-                      type=ref,event=tag,suffix=-${{ matrix.platform_suffix }}
-                      type=sha,suffix=-${{ matrix.platform_suffix }}
+                      type=raw,value=latest,enable={{is_default_branch}}
+                      type=ref,event=tag
+                      type=sha
 
             - name: Build and push Docker image
               uses: docker/build-push-action@v6
               with:
                   context: .
                   file: ./Dockerfile
-                  platforms: ${{ matrix.platform }}
+                  platforms: linux/amd64,linux/arm64
                   push: true
                   tags: |
                       ${{ steps.meta-ghcr.outputs.tags }}
